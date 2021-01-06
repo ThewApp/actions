@@ -21,11 +21,21 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/checkout@v2
+      - name: Checkout thewapp/actions
+        uses: actions/checkout@v2
+      - name: Checkout actions/virtual-environments
+        uses: actions/checkout@v2
         with:
           repository: actions/virtual-environments
           path: virtual-environments
+
+      - name: Free disk space
+        run: |
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          docker rmi $(docker image ls -aq)
+          df -h
 
       - name: Build image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
