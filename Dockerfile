@@ -30,5 +30,5 @@ RUN ../base/repos.sh \
                 pwsh -f ./$INSTALL_COMMAND \
                 ;; \
         esac \
-        && apt-get clean && rm -rf /tmp/* ; \
+        && apt-get clean && rm -rf /tmp/* && df / -h ; \
     done
