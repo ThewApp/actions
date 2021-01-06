@@ -1,5 +1,7 @@
 FROM ubuntu:20.04
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get -y update && apt-get install -y jq lsb-release sudo wget
 
 COPY virtual-environments/images/linux/ubuntu2004.json .
@@ -11,11 +13,12 @@ RUN chmod -R +x /imagegeneration
 WORKDIR imagegeneration/installers
 
 RUN ../base/repos.sh \
-    && export IMAGE_VERSION="dev" && export IMAGE_OS="ubuntu20" \
     && export HELPER_SCRIPTS="/imagegeneration/helpers" && export INSTALLER_SCRIPT_FOLDER="/imagegeneration/installers" \
+    && chmod +x $HELPER_SCRIPTS/invoke-tests.sh && ln -s $HELPER_SCRIPTS/invoke-tests.sh /usr/local/bin/invoke_tests \
     && INSTALL_COMMANDS=$(jq --raw-output ' \
     .provisioners[] | select(.type == "shell") | select(.scripts).scripts[] | select(contains("installers")) | \
-    ltrimstr("{{template_dir}}/scripts/installers/") | select(contains("preimagedata.sh") or contains("docker") | not)' \
+    ltrimstr("{{template_dir}}/scripts/installers/") | select(contains("preimagedata.sh") or \
+    contains("configure-environment.sh") or contains("docker") | not)' \
     /ubuntu2004.json) \
     && for INSTALL_COMMAND in $INSTALL_COMMANDS; do \
         echo "Installing $INSTALL_COMMAND" \
@@ -27,4 +30,5 @@ RUN ../base/repos.sh \
                 pwsh -f ./$INSTALL_COMMAND \
                 ;; \
         esac \
+        && apt-get clean && rm -rf /tmp/* \
     done
